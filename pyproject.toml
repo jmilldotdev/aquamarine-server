@@ -52,4 +52,4 @@ exclude = '''
 '''
 
 [tool.poetry.scripts]
-start = 'uvicorn aquamarine.api:app --reload'
+start = 'aquamarine.api:run'
