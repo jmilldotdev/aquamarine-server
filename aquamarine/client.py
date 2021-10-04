@@ -1,13 +1,16 @@
+import pickle
 from typing import Optional
 from typing import Union
 
-from numpy import ndarray
+import numpy as np
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import util
 from tqdm import tqdm
 
+from aquamarine.const import DATA_PATH
 from aquamarine.models import Adapter
+from aquamarine.models import EmbeddedContent
 from aquamarine.models import EmbeddedImageContent
 from aquamarine.models import EmbeddedTextContent
 
@@ -16,10 +19,13 @@ class AquamarineClient:
     def __init__(
         self,
         adapters: Optional[list[Adapter]] = None,
+        embeddings: Optional[str] = None,
         image_model_name: str = "clip-ViT-B-32",
         text_model_name: str = "all-MiniLM-L6-v2",
     ) -> None:
         self.adapters = adapters
+        if embeddings:
+            self.embeddings = self.load_embeddings(embeddings)
         self.image_model = SentenceTransformer(image_model_name)
         self.text_model = SentenceTransformer(text_model_name)
 
@@ -47,11 +53,22 @@ class AquamarineClient:
         self,
         content: Union[Image.Image, str],
         model: SentenceTransformer,
-    ) -> ndarray:
+    ) -> np.ndarray:
         return model.encode(content, convert_to_tensor=True, normalize_embeddings=True)
 
-    def query(self, q: str, embedded_content: list[EmbeddedTextContent]):
+    def query(
+        self,
+        q: str,
+        embedded_content: list[EmbeddedTextContent],
+        top_k: int = 5,
+    ):
         qe = self.embed(q, self.text_model)
         embeddings = [content.embedding for content in embedded_content]
-        res = util.semantic_search(qe, embeddings, top_k=5)
+        res = util.semantic_search(qe, embeddings, top_k=top_k)
         return res[0]
+
+    def save_embeddings(self, embeddings: list[EmbeddedContent], fname: str):
+        pickle.dump(embeddings, open(DATA_PATH / f"{fname}.pkl", "wb"))
+
+    def load_embeddings(self, fname: str) -> list[EmbeddedContent]:
+        return pickle.load(open(DATA_PATH / f"{fname}.pkl", "rb"))

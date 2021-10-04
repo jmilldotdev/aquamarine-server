@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).parent.parent
 DOTENV_PATH = BASE_DIR / ".env"
+DATA_PATH = BASE_DIR / "data"
+DATA_PATH.mkdir(exist_ok=True)
 
 load_dotenv(DOTENV_PATH)
 
