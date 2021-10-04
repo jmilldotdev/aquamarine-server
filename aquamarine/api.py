@@ -23,5 +23,5 @@ def read_root() -> dict[str, str]:
     return {"Hello": "World"}
 
 
-def run():
+def run() -> None:
     uvicorn.run("aquamarine.api:app", host="0.0.0.0", port=8000, reload=True)

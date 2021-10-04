@@ -1,8 +1,9 @@
 import mimetypes
+from collections.abc import Generator
 from typing import Any
 
 
-def get_extensions_for_type(general_type):
+def get_extensions_for_type(general_type: str) -> Generator[str, None, None]:
     mimetypes.init()
     for ext in mimetypes.types_map:
         if mimetypes.types_map[ext].split("/")[0] == general_type:
