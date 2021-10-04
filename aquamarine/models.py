@@ -12,6 +12,11 @@ class ContentTypes(Enum):
     IMAGE = "image"
 
 
+class TextEncoding(Enum):
+    FILE = "file"
+    BLOCKS = "blocks"
+
+
 class EmbeddedContent:
     def __init__(self, content_type: ContentTypes, embedding: ndarray) -> None:
         self.content_type = content_type
