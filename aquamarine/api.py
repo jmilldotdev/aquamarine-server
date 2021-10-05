@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from aquamarine.client import AquamarineClient
 
 app = FastAPI()
-aquamarine = AquamarineClient(embeddings="highlights1")
+aquamarine = AquamarineClient(embeddings="highlights2")
+
 
 origins = ["http://localhost:3000", "localhost:3000"]
 
@@ -33,33 +34,26 @@ def read_root() -> dict[str, str]:
 
 @app.get("/highlight")
 def random_highlight() -> dict[str, str]:
-    highlight = random.choice(aquamarine.embeddings).text
-    return {"highlight": highlight}
+    highlight = random.choice(aquamarine.embeddings)
+    resp = highlight.__dict__
+    del resp["embedding"]
+    return {"highlight": resp}
 
 
 @app.post("/highlight")
-def new_highlight(req: HighlightRequest) -> dict[str, str]:
+def new_highlight(req: HighlightRequest) -> dict[str, dict]:
     if req.method == "random":
-        highlight = random.choice(aquamarine.embeddings).text
+        highlight = random.choice(aquamarine.embeddings)
     elif req.method == "similar":
-        query_result = aquamarine.query(
-            q=req.highlight,
-            embedded_content=aquamarine.embeddings,
-            top_k=10,
-        )
-        idx = random.choice(query_result)["corpus_id"]
-        highlight = aquamarine.embeddings[idx].text
+        query_result = aquamarine.query(q=req.highlight, top_k=10)
+        highlight = random.choice(query_result).content
     elif req.method == "different":
-        query_result = aquamarine.query(
-            q=req.highlight,
-            embedded_content=aquamarine.embeddings,
-            top_k=1500,
-        )
-        idx = random.choice(query_result[500:])["corpus_id"]
-        highlight = aquamarine.embeddings[idx].text
+        query_result = aquamarine.query(q=req.highlight, top_k=1500)
+        highlight = random.choice(query_result[1000:]).content
     else:
         raise ValueError("Invalid method")
-    return {"highlight": highlight}
+    resp = highlight.__dict__
+    return {"highlight": resp}
 
 
 def run() -> None:

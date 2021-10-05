@@ -1,7 +1,9 @@
 from abc import ABC
 from abc import abstractmethod
 from collections.abc import Generator
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from numpy import ndarray
 from PIL import Image
@@ -17,25 +19,34 @@ class TextEncoding(Enum):
     BLOCKS = "blocks"
 
 
+@dataclass
 class EmbeddedContent:
-    def __init__(self, content_type: ContentTypes, embedding: ndarray) -> None:
-        self.content_type = content_type
-        self.embedding = embedding
+    corpus_id: int
+    content_type: ContentTypes
+    path: str
+    title: str
+    embedding: Optional[ndarray]
 
 
-class EmbeddedImageContent(EmbeddedContent):
-    def __init__(self, image: Image.Image, embedding: ndarray) -> None:
-        self.image = image
-        super().__init__(ContentTypes.IMAGE, embedding)
+@dataclass
+class ImageContent(EmbeddedContent):
+    image: Image.Image
 
 
-class EmbeddedTextContent(EmbeddedContent):
-    def __init__(self, text: str, embedding: ndarray) -> None:
-        self.text = text
-        super().__init__(ContentTypes.IMAGE, embedding)
+@dataclass
+class TextContent(EmbeddedContent):
+    text: str
+    text_encoding: TextEncoding
 
     def __str__(self) -> str:
         return self.text
+
+
+@dataclass
+class QueryResult:
+    corpus_id: int
+    score: float
+    content: EmbeddedContent
 
 
 class Adapter(ABC):
@@ -44,10 +55,10 @@ class Adapter(ABC):
 
     @property
     @abstractmethod
-    def text_in_scope(self) -> Generator[str, None, None]:
+    def text_in_scope(self) -> Generator[TextContent, None, None]:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def images_in_scope(self) -> Generator[Image.Image, None, None]:
+    def images_in_scope(self) -> Generator[ImageContent, None, None]:
         raise NotImplementedError
