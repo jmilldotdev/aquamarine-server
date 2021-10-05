@@ -56,5 +56,19 @@ def new_highlight(req: HighlightRequest) -> dict[str, dict]:
     return {"highlight": resp}
 
 
+@app.get("/tsne")
+def tsne() -> dict[str, list]:
+    res = aquamarine.load_tsne()
+    random.shuffle(res)
+    tsne_data = [{"id": "tsne", "data": []}]
+    for r in res:
+        tsne = r[1].tolist()
+        highlight = r[0].__dict__
+        tsne_data[0]["data"].append(
+            {"x": tsne[0], "y": tsne[1], "highlight": highlight},
+        )
+    return {"tsne": tsne_data}
+
+
 def run() -> None:
     uvicorn.run("aquamarine.api:app", host="0.0.0.0", port=8000, reload=True)

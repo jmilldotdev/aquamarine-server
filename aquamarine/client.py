@@ -3,9 +3,11 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
+import pandas as pd
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import util
+from sklearn.manifold import TSNE
 from tqdm import tqdm
 
 from aquamarine.const import DATA_PATH
@@ -29,6 +31,10 @@ class AquamarineClient:
             self.embeddings = self.load_embeddings(embeddings)
         self.image_model = SentenceTransformer(image_model_name)
         self.text_model = SentenceTransformer(text_model_name)
+
+    @property
+    def embeddings_df(self) -> pd.DataFrame:
+        return pd.DataFrame([content.__dict__ for content in self.embeddings])
 
     def generate_text_embeddings(self, adapter: Adapter) -> list[TextContent]:
         text_content = []
@@ -76,3 +82,18 @@ class AquamarineClient:
 
     def load_embeddings(self, fname: str) -> list[EmbeddedContent]:
         return pickle.load(open(DATA_PATH / f"{fname}.pkl", "rb"))
+
+    def tsne(self, embeddings: list[EmbeddedContent], save: bool = True) -> np.ndarray:
+        tsne = TSNE(n_components=2, verbose=0, perplexity=40, n_iter=300, init="pca")
+        tsne_pca_results = tsne.fit_transform(
+            [np.array(c.embedding) for c in embeddings],
+        )
+        if save:
+            pickle.dump(
+                list(zip(embeddings, tsne_pca_results)),
+                open(DATA_PATH / "tsne.pkl", "wb"),
+            )
+        return tsne_pca_results
+
+    def load_tsne(self):
+        return pickle.load(open(DATA_PATH / "tsne.pkl", "rb"))
