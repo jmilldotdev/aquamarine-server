@@ -21,7 +21,7 @@ from aquamarine.models import TextContent
 class AquamarineClient:
     def __init__(
         self,
-        adapters: Optional[list[Adapter]] = None,
+        adapters: list[Adapter] = [],
         embeddings: Optional[str] = None,
         image_model_name: str = "clip-ViT-B-32",
         text_model_name: str = "all-MiniLM-L6-v2",

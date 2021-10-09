@@ -5,10 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from aquamarine.adapters.local import LocalAdapter
 from aquamarine.client import AquamarineClient
 
 app = FastAPI()
-aquamarine = AquamarineClient(embeddings="highlights2")
+aquamarine = AquamarineClient()
 
 
 origins = ["http://localhost:3000", "localhost:3000"]
@@ -27,9 +28,21 @@ class HighlightRequest(BaseModel):
     method: str
 
 
+class RegisterLocalAdapterRequest(BaseModel):
+    path: str
+
+
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"Hello": "World"}
+
+
+@app.post("/register_adapter")
+def register_adapter(req: RegisterLocalAdapterRequest) -> dict[str, str]:
+    adapter = LocalAdapter(path=req.path)
+    aquamarine.adapters.append(adapter)
+    print(aquamarine.adapters)
+    return {"status": "ok"}
 
 
 @app.get("/highlight")
