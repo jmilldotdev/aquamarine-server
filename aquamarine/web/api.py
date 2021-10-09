@@ -7,10 +7,11 @@ from pydantic import BaseModel
 
 from aquamarine.adapters.local import LocalAdapter
 from aquamarine.client import AquamarineClient
+from aquamarine.web import helpers
+
 
 app = FastAPI()
-aquamarine = AquamarineClient()
-
+aquamarine = AquamarineClient(adapters=helpers.get_initial_adapters())
 
 origins = ["http://localhost:3000", "localhost:3000"]
 
@@ -37,11 +38,16 @@ def read_root() -> dict[str, str]:
     return {"Hello": "World"}
 
 
+@app.get("/adapters")
+def get_adapters() -> dict[str, list]:
+    adapter_aliases = [adapter.alias for adapter in aquamarine.adapters]
+    return {"adapters": adapter_aliases}
+
+
 @app.post("/register_adapter")
 def register_adapter(req: RegisterLocalAdapterRequest) -> dict[str, str]:
     adapter = LocalAdapter(path=req.path)
     aquamarine.adapters.append(adapter)
-    print(aquamarine.adapters)
     return {"status": "ok"}
 
 
@@ -84,4 +90,4 @@ def tsne() -> dict[str, list]:
 
 
 def run() -> None:
-    uvicorn.run("aquamarine.api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("aquamarine.web.api:app", host="0.0.0.0", port=8000, reload=True)

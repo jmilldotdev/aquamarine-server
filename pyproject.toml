@@ -56,4 +56,4 @@ exclude = '''
 '''
 
 [tool.poetry.scripts]
-start = 'aquamarine.api:run'
+start = 'aquamarine.web.api:run'

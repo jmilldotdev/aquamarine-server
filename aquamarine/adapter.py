@@ -11,6 +11,9 @@ class Adapter(ABC):
     def __init__(self, alias) -> None:
         self.alias = alias
 
+    def __str__(self) -> str:
+        return self.alias
+
     @property
     @abstractmethod
     def subpaths(self) -> Generator[Any, None, None]:

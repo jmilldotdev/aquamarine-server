@@ -29,12 +29,18 @@ class AquamarineClient:
         self.adapters = adapters
         if embeddings:
             self.embeddings = self.load_embeddings(embeddings)
-        self.image_model = SentenceTransformer(image_model_name)
-        self.text_model = SentenceTransformer(text_model_name)
+        self.image_model_name = image_model_name
+        self.text_model_name = text_model_name
+        self.text_model = None
+        self.image_model = None
 
     @property
     def embeddings_df(self) -> pd.DataFrame:
         return pd.DataFrame([content.__dict__ for content in self.embeddings])
+
+    def load_models(self):
+        self.text_model = SentenceTransformer(self.text_model_name)
+        self.image_model = SentenceTransformer(self.image_model_name)
 
     def generate_text_embeddings(self, adapter: Adapter) -> list[TextContent]:
         text_content = []
