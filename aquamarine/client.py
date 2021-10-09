@@ -10,8 +10,8 @@ from sentence_transformers import util
 from sklearn.manifold import TSNE
 from tqdm import tqdm
 
+from aquamarine.adapter import Adapter
 from aquamarine.const import DATA_PATH
-from aquamarine.models import Adapter
 from aquamarine.models import EmbeddedContent
 from aquamarine.models import ImageContent
 from aquamarine.models import QueryResult
@@ -63,15 +63,21 @@ class AquamarineClient:
     ) -> np.ndarray:
         return model.encode(content, convert_to_tensor=True, normalize_embeddings=True)
 
-    def query(self, q: str, top_k: int = 5) -> list[QueryResult]:
-        qe = self.embed(q, self.text_model)
-        embeddings = [content.embedding for content in self.embeddings]
+    def query(
+        self,
+        q: str,
+        model: SentenceTransformer,
+        embeddings,
+        top_k: int = 5,
+    ) -> list[QueryResult]:
+        qe = self.embed(q, model)
+        embeddings = [content.embedding for content in embeddings]
         res = util.semantic_search(qe, embeddings, top_k=top_k)[0]
         query_results = [
             QueryResult(
                 corpus_id=r["corpus_id"],
                 score=r["score"],
-                content=self.embeddings[r["corpus_id"]],
+                content=embeddings[r["corpus_id"]],
             )
             for r in res
         ]

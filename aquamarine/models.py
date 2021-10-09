@@ -1,6 +1,3 @@
-from abc import ABC
-from abc import abstractmethod
-from collections.abc import Generator
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -9,12 +6,12 @@ from numpy import ndarray
 from PIL import Image
 
 
-class ContentTypes(Enum):
+class ContentType(Enum):
     TEXT = "text"
     IMAGE = "image"
 
 
-class TextEncoding(Enum):
+class TextEncodingType(Enum):
     FILE = "file"
     BLOCKS = "blocks"
 
@@ -22,7 +19,7 @@ class TextEncoding(Enum):
 @dataclass
 class EmbeddedContent:
     corpus_id: int
-    content_type: ContentTypes
+    content_type: ContentType
     path: str
     title: str
     embedding: Optional[ndarray]
@@ -36,7 +33,7 @@ class ImageContent(EmbeddedContent):
 @dataclass
 class TextContent(EmbeddedContent):
     text: str
-    text_encoding: TextEncoding
+    text_encoding: TextEncodingType
 
     def __str__(self) -> str:
         return self.text
@@ -47,18 +44,3 @@ class QueryResult:
     corpus_id: int
     score: float
     content: EmbeddedContent
-
-
-class Adapter(ABC):
-    def __init__(self) -> None:
-        pass
-
-    @property
-    @abstractmethod
-    def text_in_scope(self) -> Generator[TextContent, None, None]:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def images_in_scope(self) -> Generator[ImageContent, None, None]:
-        raise NotImplementedError
