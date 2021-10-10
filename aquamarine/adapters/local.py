@@ -59,17 +59,15 @@ class LocalAdapter(Adapter):
         text = path.read_text()
         if self.text_preprocessor_fn:
             text = self.text_preprocessor_fn(text)
-        return [
-            TextContent(
-                corpus_id=corpus_id,
-                content_type=ContentType.TEXT,
-                path=str(path),
-                title=path.stem,
-                text=text,
-                text_encoding=TextEncodingType.FILE,
-                embedding=None,
-            ),
-        ]
+        return TextContent(
+            corpus_id=corpus_id,
+            content_type=ContentType.TEXT,
+            path=str(path),
+            title=path.stem,
+            text=text,
+            text_encoding=TextEncodingType.FILE,
+            embedding=None,
+        )
 
     def open_text_as_blocks(
         self,
@@ -95,16 +93,14 @@ class LocalAdapter(Adapter):
 
     def open_image(self, path: str, corpus_id: int) -> ImageContent:
         image = Image.open(path).convert("RGB")
-        return [
-            ImageContent(
-                corpus_id=corpus_id,
-                content_type=ContentType.IMAGE,
-                path=str(path),
-                title=path.stem,
-                image=image,
-                embedding=None,
-            ),
-        ]
+        return ImageContent(
+            corpus_id=corpus_id,
+            content_type=ContentType.IMAGE,
+            path=str(path),
+            title=path.stem,
+            image=image,
+            embedding=None,
+        )
 
     def default_block_splitter(self, text: str) -> Generator[str, None, None]:
         for line in text.splitlines():

@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from aquamarine.adapters.local import LocalAdapter
 from aquamarine.client import AquamarineClient
-from aquamarine.util import flatten_list
 from aquamarine.web import helpers
 from aquamarine.web.logging import LogConfig
 
@@ -17,7 +16,7 @@ dictConfig(LogConfig().dict())
 logger = logging.getLogger("aquamarine-web")
 
 app = FastAPI(debug=True)
-aquamarine = AquamarineClient(adapters=helpers.get_initial_adapters())
+aquamarine = AquamarineClient(adapters=helpers.get_initial_adapters(), embeddings="img")
 
 origins = ["http://localhost:3000", "localhost:3000"]
 
@@ -88,12 +87,18 @@ def new_highlight(req: HighlightRequest) -> dict[str, dict]:
 
 @app.post("/query_images")
 def query_images(req: QueryImagesRequest) -> dict[str, list]:
-    selected_adapters = helpers.get_selected_adapters(aquamarine, req.adapters)
-    all_images_in_scope = flatten_list(
-        [list(adapter.images_in_scope) for adapter in selected_adapters],
+    # selected_adapters = helpers.get_selected_adapters(aquamarine, req.adapters)
+    # all_images_in_scope = flatten_list(
+    #     [list(adapter.images_in_scope) for adapter in selected_adapters],
+    # )
+    if not aquamarine.image_model:
+        aquamarine.load_models()
+    query_result = aquamarine.query(
+        q=req.query,
+        model=aquamarine.image_model,
+        embeddings=aquamarine.embeddings,
     )
-    random_images = random.sample(all_images_in_scope, 5)
-    return {"images": random_images}
+    return {"images": [image.content.path for image in query_result]}
 
 
 @app.get("/tsne")

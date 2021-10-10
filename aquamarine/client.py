@@ -43,23 +43,27 @@ class AquamarineClient:
         self.image_model = SentenceTransformer(self.image_model_name)
 
     def generate_text_embeddings(self, adapter: Adapter) -> list[TextContent]:
-        text_content = []
-        for text in tqdm(list(adapter.text_in_scope)):
-            text.embedding = self.embed(text.text, self.text_model)
+        text_content = {}
+        corpus_id = 0
+        for item in tqdm(set(list(adapter.text_in_scope))):
+            text = adapter.open_text(item, corpus_id)
+            text.embedding = self.embed(text.text, self.image_model)
+            text_content[text.path] = text
+            corpus_id += 1
         return text_content
 
     def generate_text_block_embeddings(self, adapter: Adapter) -> list[TextContent]:
-        text_content = []
-        for text in tqdm(list(adapter.text_blocks_in_scope)):
-            text.embedding = self.embed(text.text, self.text_model)
-            text_content.append(text)
-        return text_content
+        # TODO
+        pass
 
     def generate_image_embeddings(self, adapter: Adapter) -> list[ImageContent]:
-        image_content = []
-        for image in tqdm(list(adapter.images_in_scope)):
+        image_content = {}
+        corpus_id = 0
+        for item in tqdm(set(list(adapter.images_in_scope))):
+            image = adapter.open_image(item, corpus_id)
             image.embedding = self.embed(image.image, self.image_model)
-            image_content.append(image)
+            image_content[image.corpus_id] = image
+            corpus_id += 1
         return image_content
 
     def embed(
@@ -77,8 +81,8 @@ class AquamarineClient:
         top_k: int = 5,
     ) -> list[QueryResult]:
         qe = self.embed(q, model)
-        embeddings = [content.embedding for content in embeddings]
-        res = util.semantic_search(qe, embeddings, top_k=top_k)[0]
+        embedding_vectors = [content.embedding for content in embeddings.values()]
+        res = util.semantic_search(qe, embedding_vectors, top_k=top_k)[0]
         query_results = [
             QueryResult(
                 corpus_id=r["corpus_id"],
