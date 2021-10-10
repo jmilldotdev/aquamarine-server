@@ -1,4 +1,6 @@
+import logging
 import random
+from logging.config import dictConfig
 
 import uvicorn
 from fastapi import FastAPI
@@ -7,10 +9,14 @@ from pydantic import BaseModel
 
 from aquamarine.adapters.local import LocalAdapter
 from aquamarine.client import AquamarineClient
+from aquamarine.util import flatten_list
 from aquamarine.web import helpers
+from aquamarine.web.logging import LogConfig
 
+dictConfig(LogConfig().dict())
+logger = logging.getLogger("aquamarine-web")
 
-app = FastAPI()
+app = FastAPI(debug=True)
 aquamarine = AquamarineClient(adapters=helpers.get_initial_adapters())
 
 origins = ["http://localhost:3000", "localhost:3000"]
@@ -29,6 +35,11 @@ class HighlightRequest(BaseModel):
     method: str
 
 
+class QueryImagesRequest(BaseModel):
+    query: str
+    adapters: list[str]
+
+
 class RegisterLocalAdapterRequest(BaseModel):
     path: str
 
@@ -40,14 +51,14 @@ def read_root() -> dict[str, str]:
 
 @app.get("/adapters")
 def get_adapters() -> dict[str, list]:
-    adapter_aliases = [adapter.alias for adapter in aquamarine.adapters]
+    adapter_aliases = list(aquamarine.adapters.keys())
     return {"adapters": adapter_aliases}
 
 
 @app.post("/register_adapter")
 def register_adapter(req: RegisterLocalAdapterRequest) -> dict[str, str]:
     adapter = LocalAdapter(path=req.path)
-    aquamarine.adapters.append(adapter)
+    aquamarine.adapters[adapter.alias] = adapter
     return {"status": "ok"}
 
 
@@ -75,6 +86,16 @@ def new_highlight(req: HighlightRequest) -> dict[str, dict]:
     return {"highlight": resp}
 
 
+@app.post("/query_images")
+def query_images(req: QueryImagesRequest) -> dict[str, list]:
+    selected_adapters = helpers.get_selected_adapters(aquamarine, req.adapters)
+    all_images_in_scope = flatten_list(
+        [list(adapter.images_in_scope) for adapter in selected_adapters],
+    )
+    random_images = random.sample(all_images_in_scope, 5)
+    return {"images": random_images}
+
+
 @app.get("/tsne")
 def tsne() -> dict[str, list]:
     res = aquamarine.load_tsne()
@@ -90,4 +111,10 @@ def tsne() -> dict[str, list]:
 
 
 def run() -> None:
-    uvicorn.run("aquamarine.web.api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "aquamarine.web.api:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        debug=True,
+    )

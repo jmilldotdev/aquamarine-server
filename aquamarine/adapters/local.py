@@ -39,45 +39,21 @@ class LocalAdapter(Adapter):
 
     @property
     def text_in_scope(self) -> Generator[TextContent, None, None]:
-        return self.get_content_from_active_paths(
-            self.active_paths,
-            self.open_text,
-            const.TEXT_EXTENSIONS,
-        )
-
-    @property
-    def text_blocks_in_scope(self) -> Generator[TextContent, None, None]:
-        return self.get_content_from_active_paths(
-            self.active_paths,
-            self.open_text_block,
-            const.TEXT_EXTENSIONS,
-        )
+        return self.get_items_from_paths(self.active_paths, const.TEXT_EXTENSIONS)
 
     @property
     def images_in_scope(self) -> Generator[ImageContent, None, None]:
-        return self.get_content_from_active_paths(
-            self.active_paths,
-            self.open_image,
-            const.IMAGE_EXTENSIONS,
-        )
+        return self.get_items_from_paths(self.active_paths, const.IMAGE_EXTENSIONS)
 
-    def get_content_from_paths(
+    def get_items_from_paths(
         self,
         paths: list[Path],
-        open_fn: Callable,
         extensions: list[str],
     ):
-        count = 0
         for ap in paths:
             for path in ap.glob("**/*"):
                 if path.suffix in extensions:
-                    try:
-                        content = open_fn(path, count)
-                        for c in content:
-                            yield c
-                        count += 1
-                    except UnicodeDecodeError:
-                        print(f"Unable to decode {path}")
+                    yield path
 
     def open_text(self, path: str, corpus_id: int) -> TextContent:
         text = path.read_text()
@@ -95,7 +71,7 @@ class LocalAdapter(Adapter):
             ),
         ]
 
-    def open_text_block(
+    def open_text_as_blocks(
         self,
         path: str,
         corpus_id: int,
