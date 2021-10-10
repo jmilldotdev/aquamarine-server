@@ -24,7 +24,7 @@ class AquamarineClient:
         adapters: dict[str, Adapter] = {},
         embeddings: Optional[str] = None,
         image_model_name: str = "clip-ViT-B-32",
-        text_model_name: str = "all-MiniLM-L6-v2",
+        text_model_name: str = "multi-qa-mpnet-base-dot-v1",
     ) -> None:
         self.adapters = adapters
         if embeddings:
@@ -47,8 +47,8 @@ class AquamarineClient:
         corpus_id = 0
         for item in tqdm(set(list(adapter.text_in_scope))):
             text = adapter.open_text(item, corpus_id)
-            text.embedding = self.embed(text.text, self.image_model)
-            text_content[text.path] = text
+            text.embedding = self.embed(text.text, self.text_model)
+            text_content[text.corpus_id] = text
             corpus_id += 1
         return text_content
 
@@ -102,7 +102,7 @@ class AquamarineClient:
     def tsne(self, embeddings: list[EmbeddedContent], save: bool = True) -> np.ndarray:
         tsne = TSNE(n_components=2, verbose=0, perplexity=40, n_iter=300, init="pca")
         tsne_pca_results = tsne.fit_transform(
-            [np.array(c.embedding) for c in embeddings],
+            [np.array(c.embedding) for c in embeddings.values()],
         )
         if save:
             pickle.dump(
