@@ -1,3 +1,4 @@
+import pickle
 from collections.abc import Callable
 from collections.abc import Generator
 from pathlib import Path
@@ -21,6 +22,7 @@ class LocalAdapter(Adapter):
         text_preprocessor_fn: Optional[Callable] = None,
         text_blocks_preprocessor_fn: Optional[Callable] = None,
         alias=None,
+        load_content: bool = True,
     ) -> None:
         self.path: Path = Path(path)
         self.active_paths = [self.path]
@@ -30,6 +32,10 @@ class LocalAdapter(Adapter):
         )
         if alias is None:
             alias = self.path.parts[-1]
+        if load_content:
+            self.embedded_content = self.load_embedded_content(alias)
+        else:
+            self.embedded_content = None
         super().__init__(alias=alias)
 
     @property
@@ -105,3 +111,8 @@ class LocalAdapter(Adapter):
     def default_block_splitter(self, text: str) -> Generator[str, None, None]:
         for line in text.splitlines():
             yield line
+
+    def load_embedded_content(self, key: str = None):
+        if not key:
+            key = self.alias
+        return pickle.load(open(const.DATA_PATH / f"{key}.pkl", "rb"))

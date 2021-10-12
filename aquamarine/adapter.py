@@ -28,3 +28,6 @@ class Adapter(ABC):
     @abstractmethod
     def images_in_scope(self) -> Generator[ImageContent, None, None]:
         raise NotImplementedError
+
+    def load_embedded_content(self, key: str) -> Any:
+        raise NotImplementedError

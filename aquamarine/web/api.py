@@ -90,16 +90,13 @@ def new_highlight(req: HighlightRequest) -> dict[str, dict]:
 
 @app.post("/query_images")
 def query_images(req: QueryImagesRequest) -> dict[str, list]:
-    # selected_adapters = helpers.get_selected_adapters(aquamarine, req.adapters)
-    # all_images_in_scope = flatten_list(
-    #     [list(adapter.images_in_scope) for adapter in selected_adapters],
-    # )
     if not aquamarine.image_model:
         aquamarine.load_models()
+    selected_adapters = helpers.get_selected_adapters(aquamarine, req.adapters)
     query_result = aquamarine.query(
         q=req.query,
         model=aquamarine.image_model,
-        embeddings=aquamarine.embeddings,
+        adapters=selected_adapters,
     )
     return {"images": [image.content.path for image in query_result]}
 
@@ -109,12 +106,17 @@ def get_scatter_data() -> dict[str, list]:
     res = aquamarine.load_tsne()
     tsne_data = {
         "scatterData": [],
-        "highlights": [v.__dict__ for k, v in aquamarine.embeddings.items()],
+        "highlights": [
+            v.__dict__
+            for k, v in aquamarine.adapters["Atomic Notes"].embedded_content.items()
+        ],
     }
     for r in res:
         tsne = r[1].tolist()
         # highlight = r[0].__dict__
-        tsne_data["scatterData"].append({"x": tsne[0], "y": tsne[1], "id": r[0]})
+        tsne_data["scatterData"].append(
+            {"x": tsne[0], "y": tsne[1], "id": r[0].corpus_id},
+        )
     return tsne_data
 
 

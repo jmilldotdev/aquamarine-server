@@ -16,6 +16,7 @@ from aquamarine.models import EmbeddedContent
 from aquamarine.models import ImageContent
 from aquamarine.models import QueryResult
 from aquamarine.models import TextContent
+from aquamarine.util import flatten_list
 
 
 class AquamarineClient:
@@ -53,8 +54,15 @@ class AquamarineClient:
         return text_content
 
     def generate_text_block_embeddings(self, adapter: Adapter) -> list[TextContent]:
-        # TODO
-        pass
+        text_block_content = {}
+        corpus_id = 0
+        for item in tqdm(set(list(adapter.text_in_scope))):
+            text_blocks = adapter.open_text_as_blocks(item, corpus_id)
+            for text_block in text_blocks:
+                text_block.embedding = self.embed(text_block.text, self.text_model)
+                text_block_content[text_block.corpus_id] = text_block
+                corpus_id += 1
+        return text_block_content
 
     def generate_image_embeddings(self, adapter: Adapter) -> list[ImageContent]:
         image_content = {}
@@ -77,17 +85,20 @@ class AquamarineClient:
         self,
         q: str,
         model: SentenceTransformer,
-        embeddings,
+        adapters,
         top_k: int = 5,
     ) -> list[QueryResult]:
         qe = self.embed(q, model)
-        embedding_vectors = [content.embedding for content in embeddings.values()]
+        content = flatten_list(
+            [adapter.embedded_content.values() for adapter in adapters],
+        )
+        embedding_vectors = [c.embedding for c in content]
         res = util.semantic_search(qe, embedding_vectors, top_k=top_k)[0]
         query_results = [
             QueryResult(
                 corpus_id=r["corpus_id"],
                 score=r["score"],
-                content=embeddings[r["corpus_id"]],
+                content=content[r["corpus_id"]],
             )
             for r in res
         ]
